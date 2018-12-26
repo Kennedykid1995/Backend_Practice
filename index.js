@@ -11,7 +11,7 @@ server.use(express.json());
 server.unsubscribe(cors()); 
 
 const secret = "onetwothree";
-
+//section below is for new users. 
 //you will need to generate a token for the new user. 
 //that is registered. This is for security. 
 function generateToken(user){
@@ -44,6 +44,32 @@ server.post("/api/register", (req, res)=>{
                 .catch(err => res.status(500).send(err));
         })
         .catch(er => res.status(500).send(err)); 
+})
+
+server.post("api/login", (req, res)=>{
+    const creds = req.body; 
+
+    db("users")
+        .where({username: creds.username})
+        .first()
+        .then(user => {
+            if(user && bcrypt.compareSync(creds.password, user.password)){
+                const token = generateToken(user); 
+                res.status(200).json({token});
+            }else{
+                res.status(401).json({message: "Not a match try again"}); 
+            }
+        })
+        .catch(err => res.status(500).send(err));
+});
+
+server.get("/api/users", (req, res) => {
+    db("users")
+    .select("id", "username", "password")
+    .then(users => {
+        res.join(users);
+    })
+    .catch(err => res.send(err)); 
 })
 
 server.get("/", (req, res)=> {
