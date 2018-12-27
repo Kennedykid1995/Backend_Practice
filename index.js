@@ -10,7 +10,7 @@ const server = express();
 server.use(express.json()); 
 server.unsubscribe(cors()); 
 
-const secret = "onetwothree";
+const secret = "one two three";
 //section below is for new users. 
 //you will need to generate a token for the new user. 
 //that is registered. This is for security. 
@@ -30,11 +30,11 @@ server.post("/api/register", (req, res)=>{
     const creds = req.body;
     const hash = bcrypt.hashSync(creds.password, 10); 
     creds.password = hash; 
-    db("user")
+    db("users")
         .insert(creds)
         .then(ids=>{
             const id = ids[0];
-            db("user")
+            db("users")
                 .where({id})
                 .first()
                 .then(user => {
@@ -43,10 +43,10 @@ server.post("/api/register", (req, res)=>{
                 })
                 .catch(err => res.status(500).send(err));
         })
-        .catch(er => res.status(500).send(err)); 
+        .catch(err => res.status(500).send(err)); 
 })
 
-server.post("api/login", (req, res)=>{
+server.post("/api/login", (req, res)=>{
     const creds = req.body; 
 
     db("users")
@@ -67,10 +67,38 @@ server.get("/api/users", (req, res) => {
     db("users")
     .select("id", "username", "password")
     .then(users => {
-        res.join(users);
+        res.json(users);
     })
     .catch(err => res.send(err)); 
 })
+
+server.get("/api/notes", (req, res) => {
+    db("notes")
+    .select("id", "title", "description")
+    .then(notes => {
+        res.json(notes); 
+    })
+    .catch(err => res.send(err)); 
+})
+
+server.post("/api/make_note", (req, res) => {
+    const note = req.body; 
+    db("notes")
+    .insert(note)
+    .then(ids => {
+        const id = ids[0];
+        db("notes")
+            .where({id})
+            .first()
+            .then(note => {
+                res.status(201).json({id: note.id});
+            })
+        .catch(err => res.status(500).send(err));
+    })
+    .catch(err => res.status(500).send(err));
+})
+
+
 
 server.get("/", (req, res)=> {
     res.send("Working");
